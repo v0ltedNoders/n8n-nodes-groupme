@@ -1,0 +1,37 @@
+run = "npm run dev"
+entrypoint = "README.md"
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_11"
+packages = ["cowsay"]
+
+[agent]
+expertMode = true
+
+[[ports]]
+localPort = 5678
+externalPort = 80
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Build Watch"
+
+[[workflows.workflow]]
+name = "Build Watch"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run build:watch"
+
+[workflows.workflow.metadata]
+outputType = "console"
