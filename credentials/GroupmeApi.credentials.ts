@@ -8,9 +8,8 @@ import type {
 export class GroupmeApi implements ICredentialType {
         name = 'groupmeApi';
 
-        displayName = 'Groupme API';
+        displayName = 'GroupMe API';
 
-        // Link to your community node's README
         documentationUrl = 'https://github.com/org/-groupme?tab=readme-ov-file#credentials';
 
         properties: INodeProperties[] = [
@@ -37,7 +36,7 @@ export class GroupmeApi implements ICredentialType {
         test: ICredentialTestRequest = {
                 request: {
                         baseURL: 'https://api.groupme.com/v3',
-                        url: '/groups',
+                        url: '/bots',
                 },
         };
 }

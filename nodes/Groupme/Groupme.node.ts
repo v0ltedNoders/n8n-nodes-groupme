@@ -4,7 +4,7 @@ import { companyDescription } from './resources/company';
 
 export class Groupme implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Groupme',
+		displayName: 'GroupMe',
 		name: 'groupme',
 		icon: { light: 'file:logo.svg', dark: 'file:logo.svg' },
 		group: ['transform'],
@@ -33,15 +33,19 @@ export class Groupme implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'User',
-						value: 'user',
+						name: 'Groups',
+						value: 'groups',
 					},
 					{
-						name: 'Company',
-						value: 'company',
+						name: 'Members',
+						value: 'members',
+					},
+					{
+						name: 'Bots',
+						value: 'bots',
 					},
 				],
-				default: 'user',
+				default: 'groups',
 			},
 			...userDescription,
 			...companyDescription,

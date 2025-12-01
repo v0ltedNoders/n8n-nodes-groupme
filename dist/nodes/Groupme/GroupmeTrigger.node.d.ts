@@ -1,9 +1,12 @@
-import { ICredentialTestFunctions, ICredentialsDecrypted, IHookFunctions, INodeCredentialTestResult, INodeType, INodeTypeDescription, IWebhookFunctions, IWebhookResponseData } from 'n8n-workflow';
+import { ICredentialTestFunctions, ICredentialsDecrypted, IHookFunctions, INodeCredentialTestResult, INodeType, INodeTypeDescription, IWebhookFunctions, IWebhookResponseData, INodePropertyOptions, ILoadOptionsFunctions } from 'n8n-workflow';
 export declare class GroupmeTrigger implements INodeType {
     description: INodeTypeDescription;
     methods: {
         credentialTest: {
             testGroupmeCred(this: ICredentialTestFunctions, credential: ICredentialsDecrypted): Promise<INodeCredentialTestResult>;
+        };
+        loadOptions: {
+            getBots(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]>;
         };
     };
     webhookMethods: {

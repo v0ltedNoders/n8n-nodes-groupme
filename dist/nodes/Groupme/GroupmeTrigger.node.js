@@ -4,7 +4,7 @@ exports.GroupmeTrigger = void 0;
 class GroupmeTrigger {
     constructor() {
         this.description = {
-            displayName: 'Groupme Trigger',
+            displayName: 'GroupMe Trigger',
             name: 'groupmeTrigger',
             icon: 'file:logo.svg',
             group: ['trigger'],
@@ -32,11 +32,14 @@ class GroupmeTrigger {
             ],
             properties: [
                 {
-                    displayName: 'Group ID',
-                    name: 'groupId',
-                    type: 'string',
+                    displayName: 'Bot',
+                    name: 'botId',
+                    type: 'options',
+                    typeOptions: {
+                        loadOptionsMethod: 'getBots',
+                    },
                     default: '',
-                    description: 'The ID of the Groupme group to listen to',
+                    description: 'Select an existing GroupMe bot to listen to',
                 },
             ],
         };
@@ -75,17 +78,30 @@ class GroupmeTrigger {
                     };
                 },
             },
+            loadOptions: {
+                async getBots() {
+                    const credentials = await this.getCredentials('groupmeApi');
+                    const token = credentials.token;
+                    const response = await this.helpers.request({
+                        method: 'GET',
+                        uri: `https://api.groupme.com/v3/bots?token=${token}`,
+                        json: true,
+                    });
+                    const bots = response.response || [];
+                    return bots.map((bot) => ({
+                        name: bot.name,
+                        value: bot.bot_id,
+                    }));
+                }
+            }
         };
         this.webhookMethods = {
             default: {
                 async checkExists() {
-                    const webhookData = this.getWorkflowStaticData('node');
-                    const groupId = this.getNodeParameter('groupId');
-                    if (!groupId) {
-                        throw new Error('Group ID is required');
-                    }
-                    if (webhookData.botId === undefined) {
-                        return false;
+                    const webhookUrl = this.getNodeWebhookUrl('default');
+                    const selectedBotId = this.getNodeParameter('botId');
+                    if (!selectedBotId) {
+                        throw new Error('Bot ID is required');
                     }
                     const credentials = await this.getCredentials('groupmeApi');
                     const token = credentials.token;
@@ -96,8 +112,8 @@ class GroupmeTrigger {
                             json: true,
                         });
                         const bots = response.response || [];
-                        const bot = bots.find((b) => b.bot_id === webhookData.botId);
-                        return bot !== undefined;
+                        const bot = bots.find((b) => b.bot_id === selectedBotId);
+                        return !!bot && bot.callback_url === webhookUrl;
                     }
                     catch (error) {
                         return false;
@@ -105,59 +121,32 @@ class GroupmeTrigger {
                 },
                 async create() {
                     const webhookUrl = this.getNodeWebhookUrl('default');
-                    const webhookData = this.getWorkflowStaticData('node');
-                    const groupId = this.getNodeParameter('groupId');
-                    if (!groupId) {
-                        throw new Error('Group ID is required');
+                    const selectedBotId = this.getNodeParameter('botId');
+                    if (!selectedBotId) {
+                        throw new Error('Bot ID is required');
                     }
                     const credentials = await this.getCredentials('groupmeApi');
                     const token = credentials.token;
-                    const body = {
-                        bot: {
-                            name: 'n8n Webhook Bot',
-                            group_id: groupId,
-                            callback_url: webhookUrl,
-                        },
-                    };
-                    try {
-                        const response = await this.helpers.request({
-                            method: 'POST',
-                            uri: `https://api.groupme.com/v3/bots?token=${token}`,
-                            body,
-                            json: true,
-                        });
-                        if (response.response && response.response.bot && response.response.bot.bot_id) {
-                            webhookData.botId = response.response.bot.bot_id;
-                            return true;
-                        }
-                        throw new Error('Failed to create bot');
-                    }
-                    catch (error) {
-                        throw new Error(`Error creating GroupMe bot: ${error}`);
-                    }
-                },
-                async delete() {
-                    const webhookData = this.getWorkflowStaticData('node');
-                    const credentials = await this.getCredentials('groupmeApi');
-                    const token = credentials.token;
-                    if (webhookData.botId === undefined) {
-                        return true;
-                    }
                     try {
                         await this.helpers.request({
                             method: 'POST',
-                            uri: `https://api.groupme.com/v3/bots/destroy?token=${token}`,
+                            uri: `https://api.groupme.com/v3/bots/update?token=${token}`,
                             body: {
-                                bot_id: webhookData.botId,
+                                bot: {
+                                    bot_id: selectedBotId,
+                                    callback_url: webhookUrl,
+                                },
                             },
                             json: true,
                         });
-                        delete webhookData.botId;
                         return true;
                     }
                     catch (error) {
-                        return false;
+                        throw new Error(`Error updating GroupMe bot webhook: ${error}`);
                     }
+                },
+                async delete() {
+                    return true;
                 },
             },
         };

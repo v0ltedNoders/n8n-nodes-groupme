@@ -7,7 +7,7 @@ const company_1 = require("./resources/company");
 class Groupme {
     constructor() {
         this.description = {
-            displayName: 'Groupme',
+            displayName: 'GroupMe',
             name: 'groupme',
             icon: { light: 'file:logo.svg', dark: 'file:logo.svg' },
             group: ['transform'],
@@ -36,15 +36,19 @@ class Groupme {
                     noDataExpression: true,
                     options: [
                         {
-                            name: 'User',
-                            value: 'user',
+                            name: 'Groups',
+                            value: 'groups',
                         },
                         {
-                            name: 'Company',
-                            value: 'company',
+                            name: 'Members',
+                            value: 'members',
+                        },
+                        {
+                            name: 'Bots',
+                            value: 'bots',
                         },
                     ],
-                    default: 'user',
+                    default: 'groups',
                 },
                 ...user_1.userDescription,
                 ...company_1.companyDescription,

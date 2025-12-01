@@ -4,7 +4,7 @@ exports.GroupmeApi = void 0;
 class GroupmeApi {
     constructor() {
         this.name = 'groupmeApi';
-        this.displayName = 'Groupme API';
+        this.displayName = 'GroupMe API';
         this.documentationUrl = 'https://github.com/org/-groupme?tab=readme-ov-file#credentials';
         this.properties = [
             {
@@ -28,7 +28,7 @@ class GroupmeApi {
         this.test = {
             request: {
                 baseURL: 'https://api.groupme.com/v3',
-                url: '/groups',
+                url: '/bots',
             },
         };
     }

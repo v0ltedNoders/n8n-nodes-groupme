@@ -8,11 +8,13 @@ import {
   INodeTypeDescription,
   IWebhookFunctions,
   IWebhookResponseData,
+  INodePropertyOptions,
+  ILoadOptionsFunctions,
 } from 'n8n-workflow';
 
 export class GroupmeTrigger implements INodeType {
   description: INodeTypeDescription = {
-    displayName: 'Groupme Trigger',
+    displayName: 'GroupMe Trigger',
     name: 'groupmeTrigger',
     icon: 'file:logo.svg',
     group: ['trigger'],
@@ -40,11 +42,14 @@ export class GroupmeTrigger implements INodeType {
     ],
     properties: [
       {
-        displayName: 'Group ID',
-        name: 'groupId',
-        type: 'string',
+        displayName: 'Bot',
+        name: 'botId',
+        type: 'options',
+        typeOptions: {
+          loadOptionsMethod: 'getBots',
+        },
         default: '',
-        description: 'The ID of the Groupme group to listen to',
+        description: 'Select an existing GroupMe bot to listen to',
       },
     ],
   };
@@ -88,20 +93,35 @@ export class GroupmeTrigger implements INodeType {
         };
       },
     },
+    loadOptions: {
+      async getBots(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+        const credentials = await this.getCredentials('groupmeApi');
+        const token = credentials.token as string;
+
+        const response = await this.helpers.request({
+          method: 'GET',
+          uri: `https://api.groupme.com/v3/bots?token=${token}`,
+          json: true,
+        });
+
+        const bots = response.response || [];
+
+        return bots.map((bot: IDataObject) => ({
+          name: bot.name as string,
+          value: bot.bot_id as string,
+        })) as INodePropertyOptions[];
+      }
+    }
   };
 
   webhookMethods = {
     default: {
       async checkExists(this: IHookFunctions): Promise<boolean> {
-        const webhookData = this.getWorkflowStaticData('node');
-        const groupId = this.getNodeParameter('groupId') as string;
+        const webhookUrl = this.getNodeWebhookUrl('default') as string;
+        const selectedBotId = this.getNodeParameter('botId') as string;
 
-        if (!groupId) {
-          throw new Error('Group ID is required');
-        }
-
-        if (webhookData.botId === undefined) {
-          return false;
+        if (!selectedBotId) {
+          throw new Error('Bot ID is required');
         }
 
         const credentials = await this.getCredentials('groupmeApi');
@@ -115,77 +135,48 @@ export class GroupmeTrigger implements INodeType {
           });
 
           const bots = response.response || [];
-          const bot = bots.find((b: IDataObject) => b.bot_id === webhookData.botId);
+          const bot = (bots as IDataObject[]).find((b) => b.bot_id === selectedBotId);
 
-          return bot !== undefined;
+          // consider webhook present only if the bot exists and its callback_url matches the webhook url
+          return !!bot && (bot.callback_url as string) === webhookUrl;
         } catch (error) {
           return false;
         }
       },
 
       async create(this: IHookFunctions): Promise<boolean> {
+        // Instead of creating a new bot, update the selected bot's callback_url to point to this webhook
         const webhookUrl = this.getNodeWebhookUrl('default') as string;
-        const webhookData = this.getWorkflowStaticData('node');
-        const groupId = this.getNodeParameter('groupId') as string;
+        const selectedBotId = this.getNodeParameter('botId') as string;
 
-        if (!groupId) {
-          throw new Error('Group ID is required');
+        if (!selectedBotId) {
+          throw new Error('Bot ID is required');
         }
 
         const credentials = await this.getCredentials('groupmeApi');
         const token = credentials.token as string;
-
-        const body = {
-          bot: {
-            name: 'n8n Webhook Bot',
-            group_id: groupId,
-            callback_url: webhookUrl,
-          },
-        };
-
-        try {
-          const response = await this.helpers.request({
-            method: 'POST',
-            uri: `https://api.groupme.com/v3/bots?token=${token}`,
-            body,
-            json: true,
-          });
-
-          if (response.response && response.response.bot && response.response.bot.bot_id) {
-            webhookData.botId = response.response.bot.bot_id;
-            return true;
-          }
-
-          throw new Error('Failed to create bot');
-        } catch (error) {
-          throw new Error(`Error creating GroupMe bot: ${error}`);
-        }
-      },
-
-      async delete(this: IHookFunctions): Promise<boolean> {
-        const webhookData = this.getWorkflowStaticData('node');
-        const credentials = await this.getCredentials('groupmeApi');
-        const token = credentials.token as string;
-
-        if (webhookData.botId === undefined) {
-          return true;
-        }
 
         try {
           await this.helpers.request({
             method: 'POST',
-            uri: `https://api.groupme.com/v3/bots/destroy?token=${token}`,
+            uri: `https://api.groupme.com/v3/bots/update?token=${token}`,
             body: {
-              bot_id: webhookData.botId,
+              bot: {
+                bot_id: selectedBotId,
+                callback_url: webhookUrl,
+              },
             },
             json: true,
           });
 
-          delete webhookData.botId;
           return true;
         } catch (error) {
-          return false;
+          throw new Error(`Error updating GroupMe bot webhook: ${error}`);
         }
+      },
+
+      async delete(this: IHookFunctions): Promise<boolean> {
+        return true;
       },
     },
   };
