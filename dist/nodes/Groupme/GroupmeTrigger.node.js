@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GroupmeTrigger = void 0;
+const n8n_workflow_1 = require("n8n-workflow");
 class GroupmeTrigger {
     constructor() {
         this.description = {
@@ -32,32 +33,29 @@ class GroupmeTrigger {
             ],
             properties: [
                 {
-                    displayName: 'Bot',
+                    displayName: 'Bot Name or ID',
                     name: 'botId',
                     type: 'options',
                     typeOptions: {
                         loadOptionsMethod: 'getBots',
                     },
                     default: '',
-                    description: 'Select an existing GroupMe bot to listen to',
+                    description: 'Select an existing GroupMe bot to listen to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
                 },
             ],
+            usableAsTool: true,
         };
         this.methods = {
             credentialTest: {
                 async testGroupmeCred(credential) {
                     const credentials = credential.data;
-                    const reqData = {
-                        uri: 'https://api.groupme.com/v3/groups?token=' + credentials.token,
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        json: true,
-                    };
                     try {
-                        const response = await this.helpers.request(reqData);
-                        if (response.status != 200) {
+                        const response = await this.helpers.httpRequest({
+                            method: 'GET',
+                            url: `https://api.groupme.com/v3/groups?token=${credentials.token}`,
+                            headers: { 'Content-Type': 'application/json' },
+                        });
+                        if (response.status !== 200) {
                             return {
                                 status: 'Error',
                                 message: `There was an error authenticating.`,
@@ -82,12 +80,12 @@ class GroupmeTrigger {
                 async getBots() {
                     const credentials = await this.getCredentials('groupmeApi');
                     const token = credentials.token;
-                    const response = await this.helpers.request({
+                    const response = await this.helpers.httpRequest({
                         method: 'GET',
-                        uri: `https://api.groupme.com/v3/bots?token=${token}`,
-                        json: true,
+                        url: `https://api.groupme.com/v3/bots?token=${token}`,
+                        headers: { 'Content-Type': 'application/json' },
                     });
-                    const bots = response.response || [];
+                    const bots = (response.response || []);
                     return bots.map((bot) => ({
                         name: bot.name,
                         value: bot.bot_id,
@@ -101,21 +99,21 @@ class GroupmeTrigger {
                     const webhookUrl = this.getNodeWebhookUrl('default');
                     const selectedBotId = this.getNodeParameter('botId');
                     if (!selectedBotId) {
-                        throw new Error('Bot ID is required');
+                        throw new n8n_workflow_1.NodeOperationError(this.getNode(), 'Bot ID is required');
                     }
                     const credentials = await this.getCredentials('groupmeApi');
                     const token = credentials.token;
                     try {
-                        const response = await this.helpers.request({
+                        const response = await this.helpers.httpRequest({
                             method: 'GET',
-                            uri: `https://api.groupme.com/v3/bots?token=${token}`,
-                            json: true,
+                            url: `https://api.groupme.com/v3/bots?token=${token}`,
+                            headers: { 'Content-Type': 'application/json' },
                         });
-                        const bots = response.response || [];
+                        const bots = (response.response || []);
                         const bot = bots.find((b) => b.bot_id === selectedBotId);
                         return !!bot && bot.callback_url === webhookUrl;
                     }
-                    catch (error) {
+                    catch {
                         return false;
                     }
                 },
@@ -123,26 +121,25 @@ class GroupmeTrigger {
                     const webhookUrl = this.getNodeWebhookUrl('default');
                     const selectedBotId = this.getNodeParameter('botId');
                     if (!selectedBotId) {
-                        throw new Error('Bot ID is required');
+                        throw new n8n_workflow_1.NodeOperationError(this.getNode(), 'Bot ID is required');
                     }
                     const credentials = await this.getCredentials('groupmeApi');
                     const token = credentials.token;
                     try {
-                        await this.helpers.request({
+                        await this.helpers.httpRequest({
                             method: 'POST',
-                            uri: `https://api.groupme.com/v3/bots/update?token=${token}`,
+                            url: `https://api.groupme.com/v3/bots/update?token=${token}`,
                             body: {
                                 bot: {
                                     bot_id: selectedBotId,
                                     callback_url: webhookUrl,
                                 },
                             },
-                            json: true,
                         });
                         return true;
                     }
-                    catch (error) {
-                        throw new Error(`Error updating GroupMe bot webhook: ${error}`);
+                    catch (err) {
+                        throw new n8n_workflow_1.NodeOperationError(this.getNode(), `Error updating GroupMe bot webhook: ${String(err)}`);
                     }
                 },
                 async delete() {

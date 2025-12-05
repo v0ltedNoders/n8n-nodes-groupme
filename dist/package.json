@@ -1,14 +1,14 @@
 {
     "name": "n8n-nodes-groupme",
     "version": "0.1.0",
-    "description": "",
+    "description": "n8n community nodes for interacting with the GroupMe API",
     "license": "MIT",
     "homepage": "",
     "keywords": ["n8n-community-node-package"],
     "author": { "name": "Gwa Shark", "email": "anderson.williams6@icloud.com" },
     "repository": {
         "type": "git",
-        "url": "https://github.com/<...>/n8n-nodes-<...>.git"
+        "url": "https://github.com/gwashark/n8n-nodes-groupme.git"
     },
     "scripts": {
         "build": "n8n-node build",

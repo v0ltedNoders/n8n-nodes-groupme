@@ -4,6 +4,7 @@ exports.GroupmeApi = void 0;
 class GroupmeApi {
     constructor() {
         this.name = 'groupmeApi';
+        this.icon = 'file:logo-light.svg';
         this.displayName = 'GroupMe API';
         this.documentationUrl = 'https://github.com/org/-groupme?tab=readme-ov-file#credentials';
         this.properties = [

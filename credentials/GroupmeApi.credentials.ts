@@ -1,5 +1,6 @@
 import type {
         IAuthenticateGeneric,
+        Icon,
         ICredentialTestRequest,
         ICredentialType,
         INodeProperties,
@@ -7,6 +8,7 @@ import type {
 
 export class GroupmeApi implements ICredentialType {
         name = 'groupmeApi';
+        icon: Icon = 'file:logo-light.svg';
 
         displayName = 'GroupMe API';
 

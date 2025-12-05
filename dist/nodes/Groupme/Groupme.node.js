@@ -2,20 +2,21 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Groupme = void 0;
 const n8n_workflow_1 = require("n8n-workflow");
-const user_1 = require("./resources/user");
-const company_1 = require("./resources/company");
+const groups_1 = require("./resources/groups");
+const Descriptions_1 = require("./resources/bots/Descriptions");
+const Descriptions_2 = require("./resources/members/Descriptions");
 class Groupme {
     constructor() {
         this.description = {
             displayName: 'GroupMe',
             name: 'groupme',
-            icon: { light: 'file:logo.svg', dark: 'file:logo.svg' },
+            icon: { light: 'file:logo-light.svg', dark: 'file:logo-dark.svg' },
             group: ['transform'],
             version: 1,
             subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
             description: 'Interact with the Groupme API',
             defaults: {
-                name: 'Groupme',
+                name: 'Group Me',
             },
             usableAsTool: true,
             inputs: [n8n_workflow_1.NodeConnectionTypes.Main],
@@ -36,23 +37,42 @@ class Groupme {
                     noDataExpression: true,
                     options: [
                         {
-                            name: 'Groups',
+                            name: 'Group',
                             value: 'groups',
                         },
                         {
-                            name: 'Members',
+                            name: 'Member',
                             value: 'members',
                         },
                         {
-                            name: 'Bots',
+                            name: 'Bot',
                             value: 'bots',
                         },
                     ],
                     default: 'groups',
                 },
-                ...user_1.userDescription,
-                ...company_1.companyDescription,
+                ...groups_1.groupsDescription,
+                ...Descriptions_1.botsDescription,
+                ...Descriptions_2.membersDescription,
             ],
+        };
+        this.methods = {
+            loadOptions: {
+                async getBots() {
+                    const credentials = await this.getCredentials('groupmeApi');
+                    const token = credentials === null || credentials === void 0 ? void 0 : credentials.token;
+                    const response = await this.helpers.httpRequest({
+                        method: 'GET',
+                        url: `https://api.groupme.com/v3/bots?token=${token}`,
+                        headers: { 'Content-Type': 'application/json' },
+                    });
+                    const bots = (response.response || []);
+                    return bots.map((bot) => ({
+                        name: bot.name,
+                        value: bot.bot_id,
+                    }));
+                },
+            },
         };
     }
 }

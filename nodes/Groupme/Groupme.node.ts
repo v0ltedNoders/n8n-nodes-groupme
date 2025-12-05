@@ -1,18 +1,23 @@
-import { NodeConnectionTypes, type INodeType, type INodeTypeDescription } from 'n8n-workflow';
-import { userDescription } from './resources/user';
-import { companyDescription } from './resources/company';
+import { NodeConnectionTypes, type INodeType, type INodeTypeDescription, type ILoadOptionsFunctions, type IDataObject } from 'n8n-workflow';
+
+type IHttpRequestHelpers = {
+	httpRequest(opts: { method: string; url: string; headers?: IDataObject; body?: unknown }): Promise<IDataObject>;
+};
+import { groupsDescription } from './resources/groups';
+import { botsDescription } from './resources/bots/Descriptions';
+import { membersDescription } from './resources/members/Descriptions';
 
 export class Groupme implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'GroupMe',
 		name: 'groupme',
-		icon: { light: 'file:logo.svg', dark: 'file:logo.svg' },
+		icon: { light: 'file:logo-light.svg', dark: 'file:logo-dark.svg' },
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description: 'Interact with the Groupme API',
 		defaults: {
-			name: 'Groupme',
+			name: 'Group Me',
 		},
 		usableAsTool: true,
 		inputs: [NodeConnectionTypes.Main],
@@ -33,22 +38,46 @@ export class Groupme implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'Groups',
+						name: 'Group',
 						value: 'groups',
 					},
 					{
-						name: 'Members',
+						name: 'Member',
 						value: 'members',
 					},
 					{
-						name: 'Bots',
+						name: 'Bot',
 						value: 'bots',
 					},
 				],
 				default: 'groups',
 			},
-			...userDescription,
-			...companyDescription,
+			...groupsDescription,
+			...botsDescription,
+			...membersDescription,
 		],
+	};
+
+
+	methods = {
+		loadOptions: {
+			async getBots(this: ILoadOptionsFunctions) {
+				const credentials = await this.getCredentials('groupmeApi');
+				const token = credentials?.token as string;
+
+				const response = await (this.helpers as unknown as IHttpRequestHelpers).httpRequest({
+					method: 'GET',
+					url: `https://api.groupme.com/v3/bots?token=${token}`,
+					headers: { 'Content-Type': 'application/json' },
+				});
+
+				const bots = (response.response || []) as IDataObject[];
+
+				return bots.map((bot) => ({
+					name: bot.name as string,
+					value: bot.bot_id as string,
+				}));
+			},
+		},
 	};
 }

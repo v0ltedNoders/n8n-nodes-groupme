@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.botsDescription = void 0;
+exports.membersDescription = void 0;
 const index_1 = require("./index");
-exports.botsDescription = [...index_1.botsOperations, ...index_1.botsFields];
+exports.membersDescription = [...index_1.membersOperations, ...index_1.membersFields];
 //# sourceMappingURL=Descriptions.js.map

@@ -10,7 +10,12 @@ import {
   IWebhookResponseData,
   INodePropertyOptions,
   ILoadOptionsFunctions,
+  NodeOperationError,
 } from 'n8n-workflow';
+
+type IHttpRequestHelpers = {
+  httpRequest(opts: { method: string; url: string; headers?: IDataObject; body?: unknown }): Promise<IDataObject>;
+};
 
 export class GroupmeTrigger implements INodeType {
   description: INodeTypeDescription = {
@@ -42,37 +47,34 @@ export class GroupmeTrigger implements INodeType {
     ],
     properties: [
       {
-        displayName: 'Bot',
+        displayName: 'Bot Name or ID',
         name: 'botId',
         type: 'options',
         typeOptions: {
           loadOptionsMethod: 'getBots',
         },
         default: '',
-        description: 'Select an existing GroupMe bot to listen to',
+        description: 'Select an existing GroupMe bot to listen to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
       },
     ],
+		usableAsTool: true,
   };
   methods = {
     credentialTest: {
-      async testGroupmeCred(
-        this: ICredentialTestFunctions,
-        credential: ICredentialsDecrypted,
-      ): Promise<INodeCredentialTestResult> {
+        async testGroupmeCred(
+          this: ICredentialTestFunctions,
+          credential: ICredentialsDecrypted,
+        ): Promise<INodeCredentialTestResult> {
         const credentials = credential.data;
 
-        const reqData = {
-          uri: 'https://api.groupme.com/v3/groups?token=' + credentials!.token,
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          json: true,
-        };
-
         try {
-          const response = await this.helpers.request(reqData);
-          if (response.status != 200) {
+          const response = await (this.helpers as unknown as IHttpRequestHelpers).httpRequest({
+            method: 'GET',
+            url: `https://api.groupme.com/v3/groups?token=${credentials!.token}`,
+            headers: { 'Content-Type': 'application/json' },
+          });
+
+          if (response.status !== 200) {
             return {
               status: 'Error',
               message: `There was an error authenticating.`,
@@ -98,15 +100,15 @@ export class GroupmeTrigger implements INodeType {
         const credentials = await this.getCredentials('groupmeApi');
         const token = credentials.token as string;
 
-        const response = await this.helpers.request({
+        const response = await (this.helpers as unknown as IHttpRequestHelpers).httpRequest({
           method: 'GET',
-          uri: `https://api.groupme.com/v3/bots?token=${token}`,
-          json: true,
+          url: `https://api.groupme.com/v3/bots?token=${token}`,
+          headers: { 'Content-Type': 'application/json' },
         });
 
-        const bots = response.response || [];
+        const bots = (response.response || []) as IDataObject[];
 
-        return bots.map((bot: IDataObject) => ({
+        return bots.map((bot) => ({
           name: bot.name as string,
           value: bot.bot_id as string,
         })) as INodePropertyOptions[];
@@ -121,25 +123,25 @@ export class GroupmeTrigger implements INodeType {
         const selectedBotId = this.getNodeParameter('botId') as string;
 
         if (!selectedBotId) {
-          throw new Error('Bot ID is required');
+          throw new NodeOperationError(this.getNode(), 'Bot ID is required');
         }
 
         const credentials = await this.getCredentials('groupmeApi');
         const token = credentials.token as string;
 
         try {
-          const response = await this.helpers.request({
+          const response = await (this.helpers as unknown as IHttpRequestHelpers).httpRequest({
             method: 'GET',
-            uri: `https://api.groupme.com/v3/bots?token=${token}`,
-            json: true,
+            url: `https://api.groupme.com/v3/bots?token=${token}`,
+            headers: { 'Content-Type': 'application/json' },
           });
 
-          const bots = response.response || [];
-          const bot = (bots as IDataObject[]).find((b) => b.bot_id === selectedBotId);
+          const bots = (response.response || []) as IDataObject[];
+          const bot = bots.find((b) => b.bot_id === selectedBotId);
 
           // consider webhook present only if the bot exists and its callback_url matches the webhook url
           return !!bot && (bot.callback_url as string) === webhookUrl;
-        } catch (error) {
+        } catch {
           return false;
         }
       },
@@ -150,28 +152,27 @@ export class GroupmeTrigger implements INodeType {
         const selectedBotId = this.getNodeParameter('botId') as string;
 
         if (!selectedBotId) {
-          throw new Error('Bot ID is required');
+          throw new NodeOperationError(this.getNode(), 'Bot ID is required');
         }
 
         const credentials = await this.getCredentials('groupmeApi');
         const token = credentials.token as string;
 
         try {
-          await this.helpers.request({
+          await (this.helpers as unknown as IHttpRequestHelpers).httpRequest({
             method: 'POST',
-            uri: `https://api.groupme.com/v3/bots/update?token=${token}`,
+            url: `https://api.groupme.com/v3/bots/update?token=${token}`,
             body: {
               bot: {
                 bot_id: selectedBotId,
                 callback_url: webhookUrl,
               },
             },
-            json: true,
           });
 
           return true;
-        } catch (error) {
-          throw new Error(`Error updating GroupMe bot webhook: ${error}`);
+        } catch (err: unknown) {
+          throw new NodeOperationError(this.getNode(), `Error updating GroupMe bot webhook: ${String(err)}`);
         }
       },
 
