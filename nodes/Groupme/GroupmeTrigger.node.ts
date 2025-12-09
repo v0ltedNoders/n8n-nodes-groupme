@@ -21,7 +21,7 @@ export class GroupmeTrigger implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'GroupMe Trigger',
     name: 'groupmeTrigger',
-    icon: 'file:logo.svg',
+    icon: 'file:logo-light.svg',
     group: ['trigger'],
     version: 1,
     subtitle: '={{$parameter["event"]}}',
