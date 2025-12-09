@@ -4,7 +4,7 @@
     "description": "n8n community nodes for interacting with the GroupMe API",
     "license": "MIT",
     "homepage": "",
-    "keywords": ["n8n-community-node-package", "groupme"],
+    "keywords": ["n8n-community-node-package", "groupme", "n8n"],
     "author": { "name": "Gwa Shark", "email": "gwabiz@proton.me" },
     "repository": {
         "type": "git",
@@ -19,7 +19,7 @@
         "release": "n8n-node release",
         "prepublishOnly": "n8n-node prerelease"
     },
-    "files": ["dist"],
+    "files": ["dist", "package.json", "nodes", "credentials", "README.md"],
     "n8n": {
         "n8nNodesApiVersion": 1,
         "strict": true,

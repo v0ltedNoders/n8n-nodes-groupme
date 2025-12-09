@@ -20,15 +20,19 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 ## Operations
 
-_List the operations supported by your node._
+GroupMe Trigger
+Bot Actions
+Group Actions
+Member Actions
 
 ## Credentials
 
-_If users need to authenticate with the app/service, provide details here. You should include prerequisites (such as signing up with the service), available authentication methods, and how to set them up._
+Find your access token at [https://dev.groupme.com/](https://dev.groupme.com/)
+> Make sure your token is secure as it give you access to all your groups and bots!
 
 ## Compatibility
 
-_State the minimum n8n version, as well as which versions you test against. You can also include any known version incompatibility issues._
+Tested And Built with 1.120.4.
 
 ## Usage
 
@@ -43,4 +47,4 @@ _By the time users are looking for community nodes, they probably already know n
 
 ## Version history
 
-_This is another optional section. If your node has multiple versions, include a short description of available versions and what changed, as well as any compatibility impact._
+V0.1.0 - Initial Beta Release
