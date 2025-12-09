@@ -147,7 +147,6 @@ export class GroupmeTrigger implements INodeType {
       },
 
       async create(this: IHookFunctions): Promise<boolean> {
-        // Instead of creating a new bot, update the selected bot's callback_url to point to this webhook
         const webhookUrl = this.getNodeWebhookUrl('default') as string;
         const selectedBotId = this.getNodeParameter('botId') as string;
 

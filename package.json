@@ -5,7 +5,7 @@
   "license": "MIT",
   "homepage": "",
   "keywords": ["n8n-community-node-package", "groupme"],
-  "author": { "name": "Gwa Shark", "email": "gwabiz@proton.me"
+  "author": { "name": "Gwa Shark", "email": "gwabiz@proton.me" },
   "repository": {
     "type": "git",
     "url": "https://github.com/v0ltedNoders/n8n-nodes-groupme.git"
